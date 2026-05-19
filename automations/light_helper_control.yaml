@@ -1,0 +1,32 @@
+- alias: Living Room Light Helper Control
+  description: Maps a Home Assistant helper boolean to physical switch actions.
+  mode: single
+
+  triggers:
+    - entity_id: input_boolean.living_room_light
+      to: "on"
+      id: turn_on
+      trigger: state
+
+    - entity_id: input_boolean.living_room_light
+      to: "off"
+      id: turn_off
+      trigger: state
+
+  actions:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id: turn_on
+          sequence:
+            - action: switch.turn_on
+              target:
+                entity_id: switch.your_living_room_light
+
+        - conditions:
+            - condition: trigger
+              id: turn_off
+          sequence:
+            - action: switch.turn_on
+              target:
+                entity_id: switch.your_switchbot_bot
