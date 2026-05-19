@@ -31,6 +31,54 @@ AI HomeOps는 여기서 한 단계 더 나아가, 집 안의 상황을 인식하
 - History Stats 기반 일일 활동 시간 누적
 - 공개 저장소 업로드를 위한 민감정보 분리 및 보안 문서화
 
+## 사용 하드웨어 및 실행 환경
+
+이 프로젝트는 시뮬레이션이 아니라 실제 Home Assistant 스마트홈 환경에서 동작하도록 구성했습니다.
+
+### Home Assistant Host
+
+- CPU: Intel N100
+- Memory: 약 12GB급 메모리 환경
+- OS: Home Assistant OS 기반 환경
+- Runtime: Docker container 기반 Home Assistant add-on 운영
+- Monitoring: Glances를 통한 CPU, 메모리, 네트워크, 컨테이너 상태 모니터링
+
+### Cameras
+
+- Camera 1: TP-Link C260
+- Camera 2: ipTIME C500
+- 용도:
+  - 거실/부엌 활동 인식용 스냅샷 촬영
+  - 사람 감지 기반 활동 분류
+  - 방 청결도 평가용 다각도 이미지 수집
+
+### IoT / Smart Home Devices
+
+- Universal IR Remote: BroadLink RM4 mini
+- SwitchBot / smart switch 기반 물리 조명 제어
+- 제습기 습도 제어용 Home Assistant `humidifier` entity
+- 적외선 기반 에어컨/가전 제어 자동화
+
+### Local PC / Server Integration
+
+- Windows + WSL 개발 환경
+- Wake-on-LAN 기반 PC 전원 제어
+- SSH shell command 기반 WSL 종료 및 로컬 개발환경 제어
+- ScamGuardian 등 로컬 AI/보안 서비스 상태 모니터링
+
+### Home Assistant Add-ons / Services
+
+- Frigate
+- Mosquitto MQTT Broker
+- Zigbee2MQTT
+- Matter Server
+- Whisper
+- Tailscale
+- VS Code Server
+- Glances
+
+민감정보 보호를 위해 실제 내부 IP, MAC 주소, RTSP URL, SSH 사용자명, API Key, provider ID는 공개하지 않습니다.
+
 ## 시스템 흐름
 
 ```text
