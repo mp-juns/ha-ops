@@ -1,0 +1,153 @@
+input_text:
+  current_location:
+    name: Current Location
+    initial: unknown
+    max: 50
+
+  current_activity:
+    name: Current Activity
+    initial: unknown
+    max: 100
+
+  current_activity_detail:
+    name: Activity Detail
+    initial: ""
+    max: 200
+
+  last_kitchen_activity:
+    name: Last Kitchen Activity
+    initial: ""
+    max: 200
+
+  daily_report:
+    name: Daily Report
+    initial: ""
+    max: 255
+
+input_number:
+  cooking_today:
+    name: Cooking Count Today
+    initial: 0
+    min: 0
+    max: 50
+    step: 1
+
+  cooking_week:
+    name: Cooking Count This Week
+    initial: 0
+    min: 0
+    max: 200
+    step: 1
+
+  eating_today:
+    name: Eating Count Today
+    initial: 0
+    min: 0
+    max: 20
+    step: 1
+
+  drinking_today:
+    name: Drinking Count Today
+    initial: 0
+    min: 0
+    max: 50
+    step: 1
+
+  laundry_week:
+    name: Laundry Count This Week
+    initial: 0
+    min: 0
+    max: 50
+    step: 1
+
+  cleanliness_score:
+    name: Room Cleanliness Score
+    initial: 5
+    min: 1
+    max: 10
+    step: 1
+
+input_boolean:
+  activity_tracking_enabled:
+    name: Activity Tracking Enabled
+    initial: true
+    icon: mdi:eye
+
+  health_alerts_enabled:
+    name: Health Alerts Enabled
+    initial: true
+    icon: mdi:heart-pulse
+
+template:
+  - binary_sensor:
+      - name: "Currently at Chair"
+        unique_id: currently_at_chair
+        state: "{{ states('input_text.current_location') == 'chair' }}"
+        icon: mdi:seat-outline
+
+      - name: "Currently at Bed"
+        unique_id: currently_at_bed
+        state: "{{ states('input_text.current_location') == 'bed' }}"
+        icon: mdi:bed
+
+      - name: "Currently at Desk"
+        unique_id: currently_at_desk
+        state: "{{ states('input_text.current_location') == 'desk' }}"
+        icon: mdi:desk
+
+      - name: "Currently Away"
+        unique_id: currently_away
+        state: "{{ states('input_text.current_location') == 'away' }}"
+        icon: mdi:home-export-outline
+
+      - name: "Currently Working"
+        unique_id: currently_working
+        state: "{{ states('input_text.current_activity') == 'computer_work' }}"
+        icon: mdi:laptop
+
+      - name: "Currently Sleeping"
+        unique_id: currently_sleeping
+        state: "{{ states('input_text.current_activity') == 'sleep' }}"
+        icon: mdi:sleep
+
+      - name: "Currently on Phone"
+        unique_id: currently_on_phone
+        state: "{{ states('input_text.current_activity') == 'phone' }}"
+        icon: mdi:cellphone
+
+sensor:
+  - platform: history_stats
+    name: Chair Time Today
+    unique_id: chair_time_today
+    entity_id: binary_sensor.currently_at_chair
+    state: "on"
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: Bed Time Today
+    unique_id: bed_time_today
+    entity_id: binary_sensor.currently_at_bed
+    state: "on"
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: Desk Time Today
+    unique_id: desk_time_today
+    entity_id: binary_sensor.currently_at_desk
+    state: "on"
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: "{{ now() }}"
+
+  - platform: history_stats
+    name: Work Time Today
+    unique_id: work_time_today
+    entity_id: binary_sensor.currently_working
+    state: "on"
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: "{{ now() }}"
