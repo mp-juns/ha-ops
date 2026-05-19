@@ -1,0 +1,129 @@
+- alias: Living Room Activity Detection
+  description: Detects living room presence and classifies location/activity with LLM Vision.
+  mode: queued
+  max_exceeded: silent
+
+  triggers:
+    - entity_id: binary_sensor.living_room_person_occupancy
+      to: "on"
+      for:
+        seconds: 30
+      trigger: state
+      id: person_detected
+
+    - entity_id: binary_sensor.living_room_person_occupancy
+      to: "off"
+      for:
+        seconds: 30
+      trigger: state
+      id: person_left
+
+    - trigger: time_pattern
+      minutes: "/5"
+      id: periodic_check
+
+  actions:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id: person_left
+          sequence:
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_location
+              data:
+                value: away
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_activity
+              data:
+                value: away
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_activity_detail
+              data:
+                value: Away from room
+
+        - conditions:
+            - condition: state
+              entity_id: binary_sensor.living_room_person_occupancy
+              state: "on"
+            - condition: state
+              entity_id: input_boolean.activity_tracking_enabled
+              state: "on"
+          sequence:
+            - variables:
+                timestamp: "{{ now().timestamp() | int }}"
+                filename: "/config/www/living_activity_{{ timestamp }}.jpg"
+
+            - action: camera.snapshot
+              data:
+                filename: "{{ filename }}"
+              target:
+                entity_id: camera.your_living_room_camera
+
+            - delay:
+                seconds: 1
+
+            - action: llmvision.image_analyzer
+              data:
+                provider: !secret llmvision_provider_id
+                message: >
+                  Analyze this room photo. Where is the person and what are they doing?
+
+                  LOCATION categories:
+                  - chair
+                  - bed
+                  - desk
+                  - floor
+                  - standing
+                  - away
+
+                  ACTIVITY categories:
+                  - computer_work
+                  - sleep
+                  - phone
+                  - reading
+                  - eating
+                  - exercise
+                  - other
+
+                  For "other", describe in detail_long.
+                  Output ONLY this JSON:
+                  {"location":"X","activity":"Y","detail":"Korean under 30 chars","detail_long":"Korean under 80 chars"}
+                image_file: "{{ filename }}"
+                max_tokens: 800
+                temperature: 0.2
+                include_filename: false
+                use_memory: false
+                store_in_timeline: false
+              response_variable: ai_result
+
+            - variables:
+                parsed: >-
+                  {%- set raw = ai_result.response_text | string -%}
+                  {%- set cleaned = raw | replace('```json', '') | replace('```', '') | trim -%}
+                  {{ cleaned | from_json(default={'location':'unknown','activity':'other','detail':'analysis failed','detail_long':''}) }}
+
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_location
+              data:
+                value: "{{ parsed.location | default('unknown') }}"
+
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_activity
+              data:
+                value: "{{ parsed.activity | default('other') }}"
+
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.current_activity_detail
+              data:
+                value: >-
+                  {% if parsed.activity == 'other' and parsed.detail_long %}
+                    {{ parsed.detail_long }}
+                  {% else %}
+                    {{ parsed.detail | default('analysis failed') }}
+                  {% endif %}
