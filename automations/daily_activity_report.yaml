@@ -1,0 +1,87 @@
+- alias: Daily Activity Report
+  description: Generates a daily activity report from accumulated Home Assistant data.
+  mode: single
+
+  triggers:
+    - trigger: time
+      at: "23:59:00"
+
+  conditions:
+    - condition: state
+      entity_id: input_boolean.activity_tracking_enabled
+      state: "on"
+
+  actions:
+    - variables:
+        chair_h: "{{ states('sensor.chair_time_today') }}"
+        bed_h: "{{ states('sensor.bed_time_today') }}"
+        desk_h: "{{ states('sensor.desk_time_today') }}"
+        work_h: "{{ states('sensor.work_time_today') }}"
+        cooking_count: "{{ states('input_number.cooking_today') | int(0) }}"
+        eating_count: "{{ states('input_number.eating_today') | int(0) }}"
+        drinking_count: "{{ states('input_number.drinking_today') | int(0) }}"
+        cleanliness: "{{ states('input_number.cleanliness_score') | int(0) }}"
+        last_kitchen: "{{ states('input_text.last_kitchen_activity') }}"
+        analysis_prompt: |
+          Please analyze today's activity data and write a short daily report in Korean.
+
+          Location time:
+          - Chair: {{ chair_h }}h
+          - Bed: {{ bed_h }}h
+          - Desk: {{ desk_h }}h
+
+          Activity time:
+          - Computer work: {{ work_h }}h
+
+          Kitchen activity:
+          - Cooking: {{ cooking_count }}
+          - Eating: {{ eating_count }}
+          - Drinking: {{ drinking_count }}
+          - Last kitchen activity: {{ last_kitchen }}
+
+          Room cleanliness:
+          - {{ cleanliness }}/10, lower is cleaner.
+
+          Format:
+          1. 2-3 line summary
+          2. One good point
+          3. One improvement suggestion
+          4. Tomorrow recommendation
+
+          Keep it around 200 Korean characters.
+
+    - action: rest_command.openai_chat
+      data:
+        prompt: "{{ analysis_prompt }}"
+      response_variable: api_response
+
+    - variables:
+        response_content: >-
+          {%- set body = api_response.content -%}
+          {%- if body is mapping and body.choices -%}
+            {{ body.choices[0].message.content }}
+          {%- else -%}
+            Analysis failed
+          {%- endif -%}
+        today_date: "{{ now().strftime('%Y-%m-%d') }}"
+        tomorrow_date: "{{ (now() + timedelta(days=1)).strftime('%Y-%m-%d') }}"
+
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.daily_report
+      data:
+        value: "{{ response_content | truncate(250, true) }}"
+
+    - action: calendar.create_event
+      target:
+        entity_id: calendar.your_daily_report_calendar
+      data:
+        summary: "Daily Activity Report"
+        description: "{{ response_content }}"
+        start_date: "{{ today_date }}"
+        end_date: "{{ tomorrow_date }}"
+
+    - action: persistent_notification.create
+      data:
+        title: "Daily Activity Report"
+        message: "{{ response_content }}"
