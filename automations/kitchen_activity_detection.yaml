@@ -1,0 +1,109 @@
+- alias: Kitchen Activity Detection
+  description: Classifies kitchen activities when a person stays in the kitchen.
+  mode: single
+  max_exceeded: silent
+
+  triggers:
+    - entity_id: binary_sensor.kitchen_person_occupancy
+      to: "on"
+      for:
+        seconds: 30
+      trigger: state
+
+  conditions:
+    - condition: state
+      entity_id: input_boolean.activity_tracking_enabled
+      state: "on"
+
+  actions:
+    - variables:
+        timestamp: "{{ now().timestamp() | int }}"
+        filename: "/config/www/kitchen_activity_{{ timestamp }}.jpg"
+
+    - action: camera.snapshot
+      data:
+        filename: "{{ filename }}"
+      target:
+        entity_id: camera.your_kitchen_camera
+
+    - delay:
+        seconds: 1
+
+    - action: llmvision.image_analyzer
+      data:
+        provider: !secret llmvision_provider_id
+        message: >
+          Analyze this kitchen photo. What is the person doing?
+
+          Pick ONE category:
+          - cooking
+          - eating
+          - drinking
+          - laundry
+          - cleaning
+          - passing
+          - other
+
+          For "other", describe in detail_long.
+          Output ONLY this JSON:
+          {"activity":"X","detail":"Korean under 30 chars","detail_long":"Korean under 80 chars"}
+        image_file: "{{ filename }}"
+        max_tokens: 800
+        temperature: 0.2
+        include_filename: false
+        use_memory: false
+        store_in_timeline: false
+      response_variable: ai_result
+
+    - variables:
+        parsed: >-
+          {%- set raw = ai_result.response_text | string -%}
+          {%- set cleaned = raw | replace('```json', '') | replace('```', '') | trim -%}
+          {{ cleaned | from_json(default={'activity':'other','detail':'analysis failed','detail_long':''}) }}
+
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.last_kitchen_activity
+      data:
+        value: >-
+          {% if parsed.activity == 'other' and parsed.detail_long %}
+            [other] {{ parsed.detail_long }}
+          {% else %}
+            [{{ parsed.activity | default('other') }}] {{ parsed.detail | default('analysis failed') }}
+          {% endif %}
+
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ parsed.activity == 'cooking' }}"
+          sequence:
+            - action: input_number.increment
+              target:
+                entity_id: input_number.cooking_today
+            - action: input_number.increment
+              target:
+                entity_id: input_number.cooking_week
+
+        - conditions:
+            - condition: template
+              value_template: "{{ parsed.activity == 'eating' }}"
+          sequence:
+            - action: input_number.increment
+              target:
+                entity_id: input_number.eating_today
+
+        - conditions:
+            - condition: template
+              value_template: "{{ parsed.activity == 'drinking' }}"
+          sequence:
+            - action: input_number.increment
+              target:
+                entity_id: input_number.drinking_today
+
+        - conditions:
+            - condition: template
+              value_template: "{{ parsed.activity == 'laundry' }}"
+          sequence:
+            - action: input_number.increment
+              target:
+                entity_id: input_number.laundry_week
