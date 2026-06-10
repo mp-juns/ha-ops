@@ -56,6 +56,15 @@ BeeStation (192.168.B.23, SMB)
 
 - ✅ BeeStation WAN 미노출 — 전용 세그먼트 격리 확인
 - ✅ OpenWrt 라우터 SSH password 로그인 차단 (key-only)
-- ⚠️ HA 호스트 `ip_forward=1` + 세그먼트 간 차단 방화벽 룰 부재 → 호스트가 0↔B 라우팅 가능. 방어심층을 위해 `FORWARD` 체인에 메인→NAS 세그먼트 차단 룰 권장.
-- ⚠️ 과거 메인 LAN 시절의 레거시 SMB 마운트가 남아있을 수 있음(응답 없는 경로) → 정리 권장.
-- ⚠️ 오프사이트 백업은 "BeeStation을 노출(serve)"하는 것과 "HA 백업을 BeeStation으로 복사"하는 것이 다름 — 실제 동기화 작업(rclone copy 등)이 도는지 별도 검증 필요.
+- ✅ **세그먼트 간 포워딩 차단 확인** — HA 호스트 `FORWARD` 기본정책이 `DROP`이고
+  Docker 체인(`DOCKER-FORWARD`)은 도커 브리지(`docker0`/`hassio`)만 ACCEPT.
+  메인 LAN ↔ NAS 세그먼트 라우팅은 기본 차단 상태.
+- ✅ **명시적 격리 룰 추가** — 암묵적 기본값에 의존하지 않도록 `DOCKER-USER` 체인에
+  양방향 DROP(`enp1s0 ↔ enp3s0`)을 명시. SSH 애드온 `init_commands`로 부팅 시 재적용(영속).
+- ✅ **레거시 마운트 정리 완료** — 과거 메인 LAN 시절의 죽은 SMB 마운트(`//192.168.A.23`,
+  `Host is down`) 언마운트 + 마운트포인트 제거. 현재는 격리 세그먼트(`//192.168.B.23`)만 active.
+- ✅ **오프사이트 백업 동기화 가동** — "serve(노출)"와 별개로 HA 백업을 실제로 BeeStation에
+  복사하는 작업을 추가. 상세는 [`system-analysis.md`](system-analysis.md) §8 참고.
+
+> 참고: `ip_forward=1` 은 Docker 컨테이너 네트워킹에 필요해 끌 수 없으므로,
+> 세그먼트 격리는 전역 포워딩 비활성화가 아니라 **인터페이스 단위 FORWARD 차단**으로 처리.

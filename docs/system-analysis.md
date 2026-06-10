@@ -183,6 +183,28 @@ WebDAV 엔드포인트 (:10081)   ← HA / Frigate / 클라이언트가 읽기·
 
 > ⚠️ 운영 메모(보안): WebDAV 사용자/비밀번호를 `--user`/`--pass` 플래그로 넘기면 `ps`(프로세스 목록)에 평문 노출됩니다. 환경변수(`RCLONE_PASS`)나 obscure 값 사용을 권장하고, 외부 노출이 불필요하면 `--addr`를 `127.0.0.1:10081`로 제한하세요. 실제 자격증명은 공개 저장소에 포함하지 않습니다.
 
+### 8.1 HA 백업 → BeeStation 자동 동기화
+
+WebDAV serve(저장소를 "여는" 쪽)와 별개로, **HA 슈퍼바이저 백업을 실제로 BeeStation에 복사**하는 작업을 구성했습니다. 코어 컨테이너는 `/backup`을 보지 못하므로, `/backup`·`rclone`·BeeStation 마운트가 모두 보이는 **SSH 애드온**에서 실행합니다.
+
+```text
+/backup (HA 자동백업 tar, 로컬)
+   │  rclone copy --include "*.tar"  (멱등)
+   ▼
+/share/mp_beestation/Backups/HA/   (BeeStation, SMB)
+   +  30일 경과분만 prune (이 폴더 한정 — 다른 BeeStation 데이터 미접근)
+```
+
+| 항목 | 값 |
+|------|----|
+| 스크립트 | `/share/scripts/ha_backup_sync.sh` (락·로깅·마운트 생존확인 포함) |
+| 스케줄 | 매일 **05:30** (04:45 자동백업 이후), busybox `crond` |
+| 영속화 | SSH 애드온 `init_commands`(crond 등록) — 부팅/애드온 재시작 시 재적용 |
+| 보관정책 | BeeStation 측 `Backups/HA/*.tar` 30일 (`rclone delete --min-age 30d`) |
+| 로그 | `/share/ha_backup_sync.log` |
+
+이로써 단일 노드(N100) 장애 시에도 HA 백업이 오프사이트(NAS)에 남습니다.
+
 ## 9. 보안 / 민감정보 처리
 
 이 분석 문서는 다음 정보를 **포함하지 않습니다**: API Key, 실제 MAC/내부 IP/RTSP URL, SSH 사용자명·키, provider ID, `.storage/`, DB·로그·SSL 인증서, 생활공간 스냅샷. 실제 값은 `secrets.yaml`에만 보관하며 `.gitignore`로 커밋에서 제외됩니다.
