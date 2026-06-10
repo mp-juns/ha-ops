@@ -66,16 +66,17 @@ AI HomeOps는 여기서 한 단계 더 나아가, 집 안의 상황을 인식하
 - SSH shell command 기반 WSL 종료 및 로컬 개발환경 제어
 - ScamGuardian 등 로컬 AI/보안 서비스 상태 모니터링
 
-### Home Assistant Add-ons / Services
+### Home Assistant Add-ons / Services (16개)
 
-- Frigate
-- Mosquitto MQTT Broker
-- Zigbee2MQTT
-- Matter Server
-- Whisper
-- Tailscale
-- VS Code Server
-- Glances
+- 통신: Mosquitto MQTT, Zigbee2MQTT, Matter Server
+- AI 영상/음성: Frigate, Whisper
+- 네트워크: AdGuard Home, Tailscale, Nginx Proxy Manager, Duck DNS
+- 파일: SFTPGo, Samba share
+- 운영: Advanced SSH & Web Terminal, Studio Code Server, HassOS SSH Configurator
+- 모니터링/유틸: Glances, Firefox
+
+전체 16개 애드온의 컨테이너 단위 역할, 통합(약 40개), 기기 98대 / 엔티티 919개 인벤토리는
+[`docs/system-analysis.md`](docs/system-analysis.md)에 전수 분석으로 정리했습니다.
 
 민감정보 보호를 위해 실제 내부 IP, MAC 주소, RTSP URL, SSH 사용자명, API Key, provider ID는 공개하지 않습니다.
 
@@ -116,6 +117,7 @@ ha-ops/
 │   └── sanitized_entities.md
 ├── docs/
 │   ├── architecture.md
+│   ├── system-analysis.md   # Docker/애드온/통합/기기 전수 분석
 │   ├── privacy.md
 │   └── resume-description.md
 └── .gitignore
