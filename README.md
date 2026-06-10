@@ -234,11 +234,6 @@ Home Assistant를 단순 스마트홈 허브가 아니라 개인 운영 패널�
 - 로컬 PC/WSL 개발환경 운영 자동화
 - 공개 저장소 업로드를 위한 민감정보 분리 및 보안 의식
 
-## 이력서 요약
-
-```text
-Home Assistant 기반 AI HomeOps 자동화 시스템을 구축했습니다. Occupancy sensor와 카메라 스냅샷을 연동해 거실/부엌 활동을 감지하고, LLM Vision으로 생활 활동을 분류한 뒤 helper entity와 History Stats를 통해 누적했습니다. 또한 PTZ 카메라 기반 방 청결도 평가, 일일 생활 리포트 생성, PC/WSL 원격 제어, 로컬 AI 서비스 상태 모니터링을 구성했습니다.
-```
 
 ## English Summary
 
