@@ -71,7 +71,9 @@ AI HomeOps는 여기서 한 단계 더 나아가, 집 안의 상황을 인식하
 - Synology **BeeStation** 을 오프사이트 저장소로 사용
 - `rclone serve webdav` 로 BeeStation 마운트(`/share/mp_beestation`)를 **WebDAV 엔드포인트(:10081)** 로 재노출
 - HA 백업/스냅샷/미디어를 WebDAV 표준 프로토콜로 보관·접근
-- 상세 구조는 [`docs/system-analysis.md`](docs/system-analysis.md) §8 참고
+- BeeStation은 **전용 NIC + 격리 세그먼트**에 배치해 WAN/메인 LAN에 직접 노출하지 않음
+- 상세 구조는 [`docs/system-analysis.md`](docs/system-analysis.md) §8,
+  네트워크 구성은 [`docs/network-topology.md`](docs/network-topology.md) 참고
 
 ### Home Assistant Add-ons / Services (16개)
 
@@ -124,7 +126,8 @@ ha-ops/
 │   └── sanitized_entities.md
 ├── docs/
 │   ├── architecture.md
-│   ├── system-analysis.md   # Docker/애드온/통합/기기 전수 분석
+│   ├── system-analysis.md     # Docker/애드온/통합/기기 전수 분석
+│   ├── network-topology.md    # NAS 격리 세그먼트 / 네트워크 구조
 │   ├── privacy.md
 │   └── resume-description.md
 └── .gitignore
