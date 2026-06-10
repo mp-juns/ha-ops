@@ -154,7 +154,36 @@ LLM 백엔드는 LLM Vision 통합(이미지)과 REST 기반 텍스트 API(요�
 
 ---
 
-## 8. 보안 / 민감정보 처리
+## 8. 오프사이트 백업 / BeeStation WebDAV 브리지
+
+Home Assistant 설정 파일에는 드러나지 않지만, SSH 애드온 호스트에서 **Synology BeeStation을 WebDAV로 연결·재노출하는 rclone 서비스**가 상시 동작합니다. (config 스캔이 아닌 프로세스/호스트 레벨 구성)
+
+```text
+Synology BeeStation
+   │  (네트워크/FUSE 마운트)
+   ▼
+/share/mp_beestation         ← BeeStation 표준 폴더
+   │  (A-EYE / Backups / Photos / Files / Computers / Cloud services / USB backup)
+   ▼
+rclone serve webdav  --addr 0.0.0.0:10081  --vfs-cache-mode writes
+   ▼
+WebDAV 엔드포인트 (:10081)   ← HA / Frigate / 클라이언트가 읽기·쓰기
+```
+
+| 항목 | 값 |
+|------|----|
+| 도구 | `rclone serve webdav` (호스트 상주 프로세스) |
+| 소스 경로 | `/share/mp_beestation` (BeeStation 마운트) |
+| 노출 포트 | `10081` (WebDAV) |
+| VFS 캐시 | `writes` 모드, `dir-cache-time=10s`, `poll-interval=0` |
+| 로그 | `/share/rclone-webdav.log` |
+| rclone.conf | 없음 — remote 설정 없이 로컬 마운트 폴더를 그대로 serve |
+
+용도: HA 백업/스냅샷/미디어를 NAS급 BeeStation 저장소로 오프사이트 보관하고, WebDAV 표준 프로토콜로 여러 클라이언트가 접근할 수 있게 하는 **저장소 게이트웨이** 역할.
+
+> ⚠️ 운영 메모(보안): WebDAV 사용자/비밀번호를 `--user`/`--pass` 플래그로 넘기면 `ps`(프로세스 목록)에 평문 노출됩니다. 환경변수(`RCLONE_PASS`)나 obscure 값 사용을 권장하고, 외부 노출이 불필요하면 `--addr`를 `127.0.0.1:10081`로 제한하세요. 실제 자격증명은 공개 저장소에 포함하지 않습니다.
+
+## 9. 보안 / 민감정보 처리
 
 이 분석 문서는 다음 정보를 **포함하지 않습니다**: API Key, 실제 MAC/내부 IP/RTSP URL, SSH 사용자명·키, provider ID, `.storage/`, DB·로그·SSL 인증서, 생활공간 스냅샷. 실제 값은 `secrets.yaml`에만 보관하며 `.gitignore`로 커밋에서 제외됩니다.
 

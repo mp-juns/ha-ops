@@ -66,6 +66,13 @@ AI HomeOps는 여기서 한 단계 더 나아가, 집 안의 상황을 인식하
 - SSH shell command 기반 WSL 종료 및 로컬 개발환경 제어
 - ScamGuardian 등 로컬 AI/보안 서비스 상태 모니터링
 
+### Off-site Storage (NAS)
+
+- Synology **BeeStation** 을 오프사이트 저장소로 사용
+- `rclone serve webdav` 로 BeeStation 마운트(`/share/mp_beestation`)를 **WebDAV 엔드포인트(:10081)** 로 재노출
+- HA 백업/스냅샷/미디어를 WebDAV 표준 프로토콜로 보관·접근
+- 상세 구조는 [`docs/system-analysis.md`](docs/system-analysis.md) §8 참고
+
 ### Home Assistant Add-ons / Services (16개)
 
 - 통신: Mosquitto MQTT, Zigbee2MQTT, Matter Server
